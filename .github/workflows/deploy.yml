@@ -1,0 +1,98 @@
+name: ito-ms/applications/wsf-ssp-docs
+on:
+  push:
+  workflow_dispatch:
+concurrency:
+  group: "${{ github.ref }}"
+  cancel-in-progress: true
+jobs:
+  deploy_dev:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    if: github.ref == 'refs/heads/develop'
+    steps:
+    - name: "Checkout"
+      uses: actions/checkout@v2
+
+    - name: Configure AWS credentials 
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        role-to-assume: arn:aws:iam::553352188627:role/wsf-ssp-docs-actions
+        aws-region: eu-central-1
+
+    - name: Install Python 3.9
+      uses: actions/setup-python@v2
+      with: 
+        python-version: 3.9
+
+    - name: Install AWSCLI
+      run: |
+        python -m pip install --upgrade pip
+        pip install awscli
+
+    - name: Deploy to S3
+      run: |
+        aws s3 rm s3://develop.baywsf.ssp.docs --recursive
+        aws s3 sync ./ s3://develop.baywsf.ssp.docs --exclude ".git*" --exclude "*.md*"
+
+    - name: Artifacts Upload to S3
+      uses: actions/upload-artifact@v3.1.1
+      if: success()
+      with:
+        name: "${{ github.job }}"
+        retention-days: 84
+        path: "./wsf-python.log"
+
+
+  deploy_prod:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    if: github.ref == 'refs/heads/master'
+    steps:
+    - name: "Checkout"
+      uses: actions/checkout@v2
+
+    - name: Configure AWS credentials 
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        role-to-assume: arn:aws:iam::553352188627:role/wsf-ssp-docs-actions
+        aws-region: eu-central-1
+
+    - name: Install Python 3.9
+      uses: actions/setup-python@v2
+      with: 
+        python-version: 3.9
+
+    - name: Install AWSCLI , Run python file
+      env: 
+          ELASTIC_INDEX: ${{ secrets.ELASTIC_INDEX }}
+          ELASTIC_USERNAME: ${{ secrets.ELASTIC_USERNAME }}
+          ELASTIC_PASSWORD: ${{ secrets.ELASTIC_PASSWORD }}
+          ELASTIC_BASE_URL_1: ${{ secrets.ELASTIC_BASE_URL_1 }}
+          ELASTIC_USERNAME_1: ${{ secrets.ELASTIC_USERNAME_1 }}
+          ELASTIC_PASSWORD_1: ${{ secrets.ELASTIC_PASSWORD_1 }}
+          ELASTIC_BASE_URL_2: ${{ secrets.ELASTIC_BASE_URL_2 }}
+          ELASTIC_USERNAME_2: ${{ secrets.ELASTIC_USERNAME_2 }}
+          ELASTIC_PASSWORD_2: ${{ secrets.ELASTIC_PASSWORD_2 }}
+      run: |
+        python -m pip install --upgrade pip
+        pip install awscli
+        pip install beautifulsoup4 requests
+        python ./elastic_indexer.py
+
+    - name: Deploy to S3
+      run: |
+        aws s3 rm s3://baywsf.ssp.docs --recursive
+        aws s3 sync ./ s3://baywsf.ssp.docs --exclude ".git*" --exclude "*.md*"
+
+    - name: Artifacts Upload to S3
+      uses: actions/upload-artifact@v3.1.1
+      if: success()
+      with:
+        name: "${{ github.job }}"
+        retention-days: 84
+        path: "./wsf-python.log"
