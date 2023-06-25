@@ -1,3 +1,3 @@
 # poc-aws
 
-First assignement.
+First assignement. This is POC.
