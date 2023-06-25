@@ -23,7 +23,7 @@ jobs:
       uses: aws-actions/configure-aws-credentials@v2
       with:
         role-to-assume: arn:aws:iam::991009956481:role/GitHubAction-AssumeRoleWithAction
-        aws-region: eu-central-1
+        aws-region: us-east-1
 
     - name: Install Python 3.9
       uses: actions/setup-python@v2
@@ -37,5 +37,5 @@ jobs:
 
     - name: Deploy to S3
       run: |
-        aws s3 rm s3://baywsf.decoupled/$REPO_NAME --recursive
-        aws s3 sync ./ s3://baywsf.decoupled/$REPO_NAME --exclude ".git*" --exclude "*.md*"
+        aws s3 rm s3://dd-unplugged-website --recursive
+        aws s3 sync ./ s3://unplugged-website --exclude ".git*" --exclude "*.md*"
