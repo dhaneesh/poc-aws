@@ -38,4 +38,4 @@ jobs:
     - name: Deploy to S3
       run: |
         aws s3 rm s3://dd-unplugged-website --recursive
-        aws s3 sync ./ s3://unplugged-website --exclude ".git*" --exclude "*.md*"
+        aws s3 sync ./ s3://dd-unplugged-website --exclude ".git*" --exclude "*.md*"
